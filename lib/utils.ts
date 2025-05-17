@@ -38,3 +38,4 @@ export const round2 = (num: number) =>
 
 export const generateId = () =>
   Array.from({ length: 24 }, () => Math.floor(Math.random() * 10)).join('')
+
