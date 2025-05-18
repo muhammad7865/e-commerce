@@ -48,32 +48,39 @@ export default function SignUpForm() {
   })
 
   const { control, handleSubmit } = form
+const onSubmit = async (data: IUserSignUp) => {
+  try {
+    const res = await registerUser(data)
+    console.log("registerUser response:", res)
 
-  const onSubmit = async (data: IUserSignUp) => {
-    try {
-      const res = await registerUser(data)
-      if (!res.success) {
-        toast({
-          description: res.error,
-          variant: 'destructive',
-        })
-        return
-      }
-      await signInWithCredentials({
-        email: data.email,
-        password: data.password,
-      })
-      redirect(callbackUrl)
-    } catch (error) {
-      if (isRedirectError(error)) {
-        throw error
-      }
+    if (!res.success) {
       toast({
-        description: 'Invalid email or password',
+        description: res.error || 'Registration failed',
         variant: 'destructive',
       })
+      return
     }
+
+    const signInRes = await signInWithCredentials({
+      email: data.email,
+      password: data.password,
+    })
+
+    console.log("signIn response:", signInRes)
+    redirect(callbackUrl)
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error
+    }
+
+    console.error("Signup error:", error)
+
+    toast({
+      description: 'An unexpected error occurred',
+      variant: 'destructive',
+    })
   }
+}
 
   return (
     <Form {...form}>
