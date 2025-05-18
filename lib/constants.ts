@@ -12,7 +12,7 @@ export const SERVER_URL =
   'http://localhost:3000'
 
 export const SENDER_EMAIL =
-  process.env.NEXT_PUBLIC_SENDER_EMAIL || 'onboarding@resend.dev'
+  process.env.NEXT_PUBLIC_SENDER_EMAIL || 'NewCommerce@resend.dev'
 export const SENDER_NAME =
   process.env.NEXT_PUBLIC_SENDER_NAME || 'NEW_COMMERCE support'
 
