@@ -1,9 +1,20 @@
-export const appName = process.env.Next_PUBLIC_APP_NAME || "NEW_COMMERCE";
+export const appName = process.env.Next_PUBLIC_APP_NAME || 'NEW_COMMERCE'
 export const APP_SLOGAN =
-  process.env.NEXT_PUBLIC_APP_SLOGAN || "Your trust our priority";
+  process.env.NEXT_PUBLIC_APP_SLOGAN || 'Your trust our priority'
 export const APP_DESCRIPTION =
-  process.env.NEXT_PUBLIC_APP_DESCRIPTION ||"BUILT WITH NEXT.JS, TAILWIND CSS, AND MONGODB";
+  process.env.NEXT_PUBLIC_APP_DESCRIPTION ||
+  'BUILT WITH NEXT.JS, TAILWIND CSS, AND MONGODB'
 export const PAGE_SIZE = Number(process.env.PAGE_SIZE || 9)
+
+export const SERVER_URL =
+  process.env.NEXT_PUBLIC_SERVER_URL ||
+  process.env.NEXT_PUBLIC_VERCEL_URL ||
+  'http://localhost:3000'
+
+export const SENDER_EMAIL =
+  process.env.NEXT_PUBLIC_SENDER_EMAIL || 'onboarding@resend.dev'
+export const SENDER_NAME =
+  process.env.NEXT_PUBLIC_SENDER_NAME || 'NEW_COMMERCE support'
 
 export const FREE_SHIPPING_MIN_PRICE = Number(
   process.env.FREE_SHIPPING_MIN_PRICE || 35
