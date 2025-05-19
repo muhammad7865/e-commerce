@@ -42,7 +42,8 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
-/*shadecn */:root {
+/*shadecn */
+:root {
   --radius: 0.5rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
@@ -111,7 +112,6 @@
   --sidebar-ring: oklch(0.554 0.135 66.442);
 }
 
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -134,5 +134,8 @@
   }
   .h2-bold {
     @apply font-bold text-lg lg:text-xl;
+  }
+  .flex-between {
+    @apply flex justify-between items-center;
   }
 }
