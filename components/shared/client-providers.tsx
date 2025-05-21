@@ -2,7 +2,6 @@
 import React from 'react'
 import useCartSidebar from '@/hooks/use-cart-sidebar'
 import CartSidebar from './cart-sidebar'
-import { Toaster } from '../ui/sonner'
 
 export default function ClientProviders({
   children,
@@ -21,7 +20,6 @@ export default function ClientProviders({
       ) : (
         <div>{children}</div>
       )}
-      <Toaster />
     </>
   )
 }
