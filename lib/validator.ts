@@ -64,6 +64,13 @@ export const ProductInputSchema = z.object({
     .nonnegative('Number of sales must be a non-negative number'),
 })
 
+//uploadthing
+
+export const ProductUpdateSchema = ProductInputSchema.extend({
+  _id: z.string().min(1, 'Product ID is required'),
+})
+
+
 // Order Item
 export const OrderItemSchema = z.object({
   clientId: z.string().min(1, 'clientId is required'),
@@ -193,3 +200,4 @@ export const UserSignUpSchema = UserSignInSchema.extend({
 export const UserNameSchema = z.object({
   name: UserName,
 })
+
