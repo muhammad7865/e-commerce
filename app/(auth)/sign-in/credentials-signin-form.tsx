@@ -25,7 +25,7 @@ import { appName } from '@/lib/constants'
 const signInDefaultValues =
   process.env.NODE_ENV === 'development'
     ? {
-        email: 'admin@admin.com',
+        email: 'john@me.com',
         password: '123456',
       }
     : {

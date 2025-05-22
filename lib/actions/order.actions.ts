@@ -7,71 +7,96 @@ import { OrderInputSchema } from '../validator'
 import { AVAILABLE_DELIVERY_DATES, PAGE_SIZE } from '../constants'
 import Order, { IOrder } from '../db/models/order.model'
 import { revalidatePath } from 'next/cache'
-import { sendPurchaseReceipt } from '@/emails'
 import { paypal } from '../paypal'
 import { Cart, IOrderList, OrderItem, ShippingAddress } from '@/types'
 import { DateRange } from 'react-day-picker'
 import Product, { IProduct } from '../db/models/product.model'
 import User from '../db/models/user.model'
+import { sendAskReviewOrderItems, sendPurchaseReceipt } from '@/emails'
+import mongoose from 'mongoose'
 
-
-
-// DELETE Order
-export async function deleteOrder(id: string) {
+//admin Orders actions
+export async function updateOrderToPaid(orderId: string) {
   try {
     await connectToDatabase()
-    const res = await Order.findByIdAndDelete(id)
-    if (!res) throw new Error('Order not found')
-    revalidatePath('/admin/orders')
-    return {
-      success: true,
-      message: 'Order deleted successfully',
-    }
-  } catch (error) {
-    return { success: false, message: formatError(error) }
+    const order = await Order.findById(orderId).populate<{
+      user: { email: string; name: string }
+    }>("user", "name email")
+    if (!order) throw new Error("Order not found")
+    if (order.isPaid) throw new Error("Order is already paid")
+    order.isPaid = true
+    order.paidAt = new Date()
+    await order.save()
+    if (!process.env.MONGODB_URI?.startsWith("mongodb://localhost")) await updateProductStock(order._id)
+    if (order.user.email) await sendPurchaseReceipt({ order })
+
+    // Revalidate both paths to ensure all pages update
+    revalidatePath(`/account/orders/${orderId}`)
+    revalidatePath(`/admin/orders/${orderId}`)
+
+    return { success: true, message: "Order paid successfully" }
+  } catch (err) {
+    return { success: false, message: formatError(err) }
   }
 }
 
-// GET ALL ORDERS
-
-export async function getAllOrders({
-  limit,
-  page,
-}: {
-  limit?: number
-  page: number
-}) {
-  limit = limit || PAGE_SIZE
-  await connectToDatabase()
-  const skipAmount = (Number(page) - 1) * limit
-  const orders = await Order.find()
-    .populate('user', 'name')
-    .sort({ createdAt: 'desc' })
-    .skip(skipAmount)
-    .limit(limit)
-  const ordersCount = await Order.countDocuments()
-  return {
-    data: JSON.parse(JSON.stringify(orders)) as IOrderList[],
-    totalPages: Math.ceil(ordersCount / limit),
-  }
-}
-
-// DELETE Product
-export async function deleteProduct(id: string) {
+export async function deliverOrder(orderId: string) {
   try {
     await connectToDatabase()
-    const res = await Product.findByIdAndDelete(id)
-    if (!res) throw new Error('Product not found')
-    revalidatePath('/admin/products')
-    return {
-      success: true,
-      message: 'Product deleted successfully',
-    }
-  } catch (error) {
-    return { success: false, message: formatError(error) }
+    const order = await Order.findById(orderId).populate<{
+      user: { email: string; name: string }
+    }>("user", "name email")
+    if (!order) throw new Error("Order not found")
+    if (!order.isPaid) throw new Error("Order is not paid")
+    order.isDelivered = true
+    order.deliveredAt = new Date()
+    await order.save()
+    if (order.user.email) await sendAskReviewOrderItems({ order })
+
+    // Revalidate both paths to ensure all pages update
+    revalidatePath(`/account/orders/${orderId}`)
+    revalidatePath(`/admin/orders/${orderId}`)
+
+    return { success: true, message: "Order delivered successfully" }
+  } catch (err) {
+    return { success: false, message: formatError(err) }
   }
 }
 
+const updateProductStock = async (orderId: string) => {
+  const session = await mongoose.connection.startSession()
+
+  try {
+    session.startTransaction()
+    const opts = { session }
+
+    const order = await Order.findOneAndUpdate(
+      { _id: orderId },
+      { isPaid: true, paidAt: new Date() },
+      opts
+    )
+    if (!order) throw new Error('Order not found')
+
+    for (const item of order.items) {
+      const product = await Product.findById(item.product).session(session)
+      if (!product) throw new Error('Product not found')
+
+      product.countInStock -= item.quantity
+      await Product.updateOne(
+        { _id: product._id },
+        { countInStock: product.countInStock },
+        opts
+      )
+    }
+    await session.commitTransaction()
+    session.endSession()
+    return true
+  } catch (error) {
+    await session.abortTransaction()
+    session.endSession()
+    throw error
+  }
+}
 // GET ALL PRODUCTS FOR ADMIN
 export async function getAllProductsForAdmin({
   query,
@@ -126,6 +151,63 @@ export async function getAllProductsForAdmin({
     to: pageSize * (Number(page) - 1) + products.length,
   }
 }
+
+// DELETE Order
+export async function deleteOrder(id: string) {
+  try {
+    await connectToDatabase()
+    const res = await Order.findByIdAndDelete(id)
+    if (!res) throw new Error('Order not found')
+    revalidatePath('/admin/orders')
+    return {
+      success: true,
+      message: 'Order deleted successfully',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+// GET ALL ORDERS
+export async function getAllOrders({
+  limit,
+  page,
+}: {
+  limit?: number
+  page: number
+}) {
+  limit = limit || PAGE_SIZE
+  await connectToDatabase()
+  const skipAmount = (Number(page) - 1) * limit
+  const orders = await Order.find()
+    .populate('user', 'name')
+    .sort({ createdAt: 'desc' })
+    .skip(skipAmount)
+    .limit(limit)
+  const ordersCount = await Order.countDocuments()
+  return {
+    data: JSON.parse(JSON.stringify(orders)) as IOrderList[],
+    totalPages: Math.ceil(ordersCount / limit),
+  }
+}
+
+// DELETE Product
+export async function deleteProduct(id: string) {
+  try {
+    await connectToDatabase()
+    const res = await Product.findByIdAndDelete(id)
+    if (!res) throw new Error('Product not found')
+    revalidatePath('/admin/products')
+    return {
+      success: true,
+      message: 'Product deleted successfully',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+
 
 // GET ORDERS BY USER
 export async function getOrderSummary(date: DateRange) {

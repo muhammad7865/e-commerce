@@ -8,14 +8,28 @@ import { loadEnvConfig } from '@next/env'
 import Review from './models/review.model'
 import Order from './models/order.model'
 import { IOrderInput, OrderItem, ShippingAddress } from '@/types'
-import { calculateFutureDate, calculatePastDate, generateId, round2 } from '../utils'
+import {
+  calculateFutureDate,
+  calculatePastDate,
+  generateId,
+  round2,
+} from '../utils'
 import { AVAILABLE_DELIVERY_DATES } from '../constants'
+import WebPage from './models/web-page.model'
 
 loadEnvConfig(cwd())
 
 const main = async () => {
   try {
-    const { users, products, reviews } = data
+    const { products, users, reviews, webPages } = data
+
+    await connectToDatabase(process.env.MONGODB_URI)
+
+    await WebPage.deleteMany()
+    await WebPage.insertMany(webPages)
+    const check = await WebPage.find()
+    console.log('Inserted Pages:', check)
+
     await connectToDatabase(process.env.MONGODB_URI)
 
     await User.deleteMany()
@@ -74,7 +88,6 @@ const main = async () => {
   }
 }
 
-
 const generateOrder = async (
   i: number,
   users: any,
@@ -98,7 +111,6 @@ const generateOrder = async (
   )
 
   if (!product1 || !product2 || !product3) throw new Error('Product not found')
-
 
   const items = [
     {
@@ -158,7 +170,6 @@ const generateOrder = async (
   }
   return order
 }
-
 
 export const calcDeliveryDateAndPriceForSeed = ({
   items,

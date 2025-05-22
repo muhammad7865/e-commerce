@@ -1,11 +1,13 @@
 import {
   Body,
+  Button,
   Column,
   Container,
   Head,
   Heading,
   Html,
   Img,
+  Link,
   Preview,
   Row,
   Section,
@@ -16,13 +18,12 @@ import {
 import { formatCurrency } from '@/lib/utils'
 import { IOrder } from '@/lib/db/models/order.model'
 import { SERVER_URL } from '@/lib/constants'
-import Link from 'next/link'
 
 type OrderInformationProps = {
   order: IOrder
 }
 
-PurchaseReceiptEmail.PreviewProps = {
+AskReviewOrderItemsEmail.PreviewProps = {
   order: {
     _id: '123',
     isPaid: true,
@@ -64,17 +65,17 @@ PurchaseReceiptEmail.PreviewProps = {
 } satisfies OrderInformationProps
 const dateFormatter = new Intl.DateTimeFormat('en', { dateStyle: 'medium' })
 
-export default async function PurchaseReceiptEmail({
+export default async function AskReviewOrderItemsEmail({
   order,
 }: OrderInformationProps) {
   return (
     <Html>
-      <Preview>View order receipt</Preview>
+      <Preview>Review Order Items</Preview>
       <Tailwind>
         <Head />
         <Body className='font-sans bg-white'>
           <Container className='max-w-xl'>
-            <Heading>Purchase Receipt</Heading>
+            <Heading>Review Order Items</Heading>
             <Section>
               <Row>
                 <Column>
@@ -125,8 +126,13 @@ export default async function PurchaseReceiptEmail({
                       </Text>
                     </Link>
                   </Column>
-                  <Column align='right' className='align-top'>
-                    <Text className='m-0 '>{formatCurrency(item.price)}</Text>
+                  <Column align='right' className='align-top '>
+                    <Button
+                      href={`${SERVER_URL}/product/${item.slug}#reviews`}
+                      className='text-center bg-blue-500 hover:bg-blue-700 text-white   py-2 px-4 rounded'
+                    >
+                      Review this product
+                    </Button>
                   </Column>
                 </Row>
               ))}
