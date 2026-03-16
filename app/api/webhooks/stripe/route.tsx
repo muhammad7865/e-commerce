@@ -4,13 +4,27 @@ import Stripe from 'stripe'
 import { sendPurchaseReceipt } from '@/emails'
 import Order from '@/lib/db/models/order.model'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
+const getStripeClient = () => {
+  const secretKey = process.env.STRIPE_SECRET_KEY
+  if (!secretKey) {
+    throw new Error('Missing STRIPE_SECRET_KEY environment variable')
+  }
+  return new Stripe(secretKey)
+}
 
 export async function POST(req: NextRequest) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    return new NextResponse('Missing STRIPE_WEBHOOK_SECRET environment variable', {
+      status: 500,
+    })
+  }
+
+  const stripe = getStripeClient()
   const event = await stripe.webhooks.constructEvent(
     await req.text(),
     req.headers.get('stripe-signature') as string,
-    process.env.STRIPE_WEBHOOK_SECRET as string
+    webhookSecret
   )
 
   if (event.type === 'charge.succeeded') {

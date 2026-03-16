@@ -63,13 +63,7 @@ const main = async () => {
     await Order.deleteMany()
     const orders = []
     for (let i = 0; i < 200; i++) {
-      orders.push(
-        await generateOrder(
-          i,
-          createdUser.map((x) => x._id),
-          createdProducts.map((x) => x._id)
-        )
-      )
+      orders.push(await generateOrder(i, createdUser, createdProducts))
     }
     const createdOrders = await Order.insertMany(orders)
     console.log({
@@ -92,22 +86,20 @@ const generateOrder = async (
   users: any,
   products: any
 ): Promise<IOrderInput> => {
-  const product1 = await Product.findById(products[i % products.length])
+  const product1 = products[i % products.length]
 
-  const product2 = await Product.findById(
+  const product2 =
     products[
       i % products.length >= products.length - 1
         ? (i % products.length) - 1
         : (i % products.length) + 1
     ]
-  )
-  const product3 = await Product.findById(
+  const product3 =
     products[
       i % products.length >= products.length - 2
         ? (i % products.length) - 2
         : (i % products.length) + 2
     ]
-  )
 
   if (!product1 || !product2 || !product3) throw new Error('Product not found')
 
@@ -148,7 +140,7 @@ const generateOrder = async (
   ]
 
   const order = {
-    user: users[i % users.length],
+    user: users[i % users.length]._id,
     items: items.map((item) => ({
       ...item,
       product: item.product,
